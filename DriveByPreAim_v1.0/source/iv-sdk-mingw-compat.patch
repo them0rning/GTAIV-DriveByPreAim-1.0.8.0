@@ -1,0 +1,47 @@
+diff --git a/include/CTheScripts.h b/include/CTheScripts.h
+index a2bb38d..d84e0b1 100644
+--- a/include/CTheScripts.h
++++ b/include/CTheScripts.h
+@@ -14,25 +14,10 @@ public:
+ 	static inline auto& m_pCurrentThread = AddressSetter::GetRef<uint32_t>(0x1449AE0, 0x1394FB4);
+ 	static uint32_t FindNativeAddress(uint32_t nativeHash)
+ 	{
+-		__try
+-		{
+-			uint32_t funcPtr = AddressSetter::Get(0x1A76D0, 0x226AF0);
+-			uint32_t nativePtr;
+-			_asm
+-			{
+-				push esi
+-				mov esi, nativeHash
+-				call funcPtr
+-				pop esi
+-				mov nativePtr, eax
+-			}
+-
+-			return nativePtr;
+-		}
+-		__except (EXCEPTION_EXECUTE_HANDLER)
+-		{
+-			return 0;
+-		}
++		uint32_t funcPtr = AddressSetter::Get(0x1A76D0, 0x226AF0);
++		uint32_t nativePtr;
++		__asm__ volatile("call *%2" : "=a"(nativePtr) : "S"(nativeHash), "r"(funcPtr) : "ecx", "edx", "memory", "cc");
++		return nativePtr;
+ 	}
+ 	static bool IsPlayerOnAMission()
+ 	{
+diff --git a/include/NewAddressSet.h b/include/NewAddressSet.h
+index 4be71ce..419f3b0 100644
+--- a/include/NewAddressSet.h
++++ b/include/NewAddressSet.h
+@@ -76,7 +76,7 @@ namespace AddressSetter
+ 		}
+ 		if (plugin::gameVer == plugin::VERSION_1070) return *reinterpret_cast<T*>(gBaseAddress + addr1070);
+ 		if (plugin::gameVer == plugin::VERSION_1080) return *reinterpret_cast<T*>(gBaseAddress + addr1080);
+-		return *reinterpret_cast<T*>(nullptr);
++		return *(T*)(uintptr_t)0;
+ 	}
+ 
+ 	uint32_t Get(uint32_t addr1070, uint32_t addr1080)
